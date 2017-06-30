@@ -22,7 +22,7 @@ import java.util.ArrayList;
 
 /**
  *
- * @author Ji Young Yun
+ * @author Ji Young Yun and Yue Kuang
  */
 
 public class compute_num_people{
