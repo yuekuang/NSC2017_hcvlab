@@ -1,0 +1,132 @@
+---
+title: "SurvivalCenter"
+author: "Ji Young Yun"
+date: "5/23/2017"
+output: html_document
+---
+
+## Load libraries
+```{r}
+library(dplyr)
+library(mosaic)
+library(lubridate)
+```
+
+## Datasets
+### Combined data
+```{r}
+NSC_combinedData <- read.csv("~/Desktop/NSC_combinedData.csv", na.strings = c("", "NA"))
+
+# Remove the columns below
+NSC_combinedData$X <- NULL
+NSC_combinedData$X <- NULL
+NSC_combinedData$time.arrived <- NULL
+NSC_combinedData$time_waited_minutes <- NULL
+
+# Rename column
+colnames(NSC_combinedData)[20] <- "num.of.people.that.day"
+
+# Remove any NAs
+NSC_combinedDataUpdated <- na.omit(NSC_combinedData)
+
+# Remove the row that has a date value in the `language.spoken.at.home` column
+NSC_combinedDataUpdated <- NSC_combinedDataUpdated %>%
+  filter(language.spoken.at.home != "9/15/16")
+
+NSC_combinedDataUpdated <- NSC_combinedDataUpdated %>%
+  mutate("income.per.person" = monthly.household.income / household_size)
+
+# Add new column `level.of.income` - divided the personal income into 20%, 40%, 60%, 80%, and 100% quartiles and categorized them accordingly (Low, LowMed, Med, MedHigh, and High)
+NSC_combinedDataUpdated <- mutate(NSC_combinedDataUpdated, level.of.income = 
+                             ifelse(
+                               income.per.person > 1050.5, "High", 
+                                    ifelse(
+                                      income.per.person > 888, "MedHigh", 
+                                           ifelse(
+                                             income.per.person > 612, "Med", 
+                                             ifelse(
+                                               income.per.person > 340, "LowMed", "Low"
+                                             )
+                                           ))))
+
+# Format `income.per.person` so that it has only 2 decimal places
+NSC_combinedDataUpdated$income.per.person <- format(round(NSC_combinedDataUpdated$income.per.person), nsmall=2)
+
+# Rename two columns
+colnames(NSC_combinedDataUpdated)[18] <- "monthly.household.income($)"
+colnames(NSC_combinedDataUpdated)[21] <- "income.per.person($)"
+
+# Add new column `English.speaker` to categorize them into English speaker or not (TRUE/FALSE)
+NSC_combinedDataUpdated <- mutate(NSC_combinedDataUpdated, English.speaker = 
+                             ifelse(
+                               language.spoken.at.home == "English", "TRUE", "FALSE"
+                             ))
+# Add new column `car` to categorize the data into people with car or not (TRUE/FALSE)
+NSC_combinedDataUpdated <- mutate(NSC_combinedDataUpdated, car = 
+                             ifelse(
+                               usual.transportation == "car", "TRUE", "FALSE"
+                             ))
+
+# Add `level.of.num.of.ppl` - find the total average and compare to each date
+# mean(unique(NSC_combinedData$num.of.people.that.day)) is the total mean
+NSC_combinedDataUpdated <- mutate(NSC_combinedDataUpdated, level.of.num.of.ppl = 
+                             ifelse(
+                               num.of.people.that.day < mean(unique(NSC_combinedDataUpdated$num.of.people.that.day)), "Less", 
+                               ifelse(
+                                 num.of.people.that.day > mean(unique(NSC_combinedDataUpdated$num.of.people.that.day))+1, "Above", "Average"
+                               )
+                             ))
+
+# Add `Northampton` to categorize data into living in Northampton or not (TRUE/FALSE)
+NSC_combinedDataUpdated <- mutate(NSC_combinedDataUpdated, Northampton = 
+                             ifelse(town....Temp..means.homeless. == "Northampton", "TRUE", "FALSE"
+                             ))
+# Export the dataset
+write.csv(NSC_combinedDataUpdated, file="NSC_combinedDataUpdated.csv")
+```
+
+### April data
+```{r}
+# Get a subset of the combined data using the index
+NSC_AprilData <- NSC_combinedData[1:658,]
+
+# Remove the columns below
+NSC_AprilData$time.arrived <- NULL
+NSC_AprilData$time_waited_minutes <- NULL
+
+# Remove NAs
+NSC_AprilData <- na.omit(NSC_AprilData)
+
+# Rename column
+colnames(NSC_AprilData)[20] <- "num.of.people.that.day"
+
+# Export dataset
+write.csv(NSC_AprilData, file="NSC_AprilDataUpdated.csv")
+```
+
+### May data
+```{r}
+# Import May dataset
+NSC_MayData <- read.csv("~/Desktop/NSC_MayDataUpdated.csv", na.strings = c("", "NA"))
+
+# Remove NAs
+NSC_MayData <- na.omit(NSC_MayData)
+
+# Remove columns below
+NSC_MayData$X.1 <- NULL
+NSC_MayData$X <- NULL
+
+# Rename column
+colnames(NSC_MayData)[22] <- "num.of.people.that.day"
+
+# Export dataset
+write.csv(NSC_MayData, file="NSC_MayDataUpdated.csv")
+
+# Import new May dataset (with `open_time`, `wait_open`, and `arrive_before_after`)
+NSC_MayData_updated <- read.csv("~/Desktop/NSC_MayDataUpdated5_24.csv")
+
+# Remove column
+NSC_MayData_updated$X <- NULL
+```
+
+
